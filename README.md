@@ -52,9 +52,10 @@ Node.js v18+
 ```
 React 18
 ├── Vite                # Build tool
+├── Tailwind CSS        # Utility-first CSS framework
 ├── React Router        # Navegación
 ├── Context API         # State management
-├── Vanilla CSS         # Estilos (sin frameworks)
+├── Vanilla CSS         # Estilos custom (compatible con Tailwind)
 └── Fetch API           # HTTP requests
 ```
 
