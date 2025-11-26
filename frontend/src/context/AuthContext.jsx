@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 /**
  * Contexto de Autenticación para gestionar el estado de usuario y JWT
@@ -13,19 +13,10 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // Cargar usuario al montar el componente si hay token
-  useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
   /**
    * Obtiene los datos del usuario actual desde el backend
    */
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/auth/me`, {
         headers: {
@@ -45,7 +36,16 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cargar usuario al montar el componente si hay token
+  useEffect(() => {
+    if (token) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, [token, fetchUser]);
 
   /**
    * Inicia sesión con email y contraseña
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         return { success: false, message: data.message };
       }
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Error de conexión' };
     }
   };
