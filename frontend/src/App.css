@@ -1,0 +1,11 @@
+.app-loading,
+.callback-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  background: var(--bg-dark);
+  color: var(--text-primary);
+}
