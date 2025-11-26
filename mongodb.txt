@@ -1,4 +1,0 @@
-usuario placenciamenares_db_user
-password KMEB8lcM0KuXsSoG
-
-uri mongodb+srv://placenciamenares_db_user:KMEB8lcM0KuXsSoG@applibro.elx3uzm.mongodb.net/?appName=AppLibro

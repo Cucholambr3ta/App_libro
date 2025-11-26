@@ -18,6 +18,9 @@ dist/
 .env.test.local
 .env.production.local
 
+# MongoDB credentials
+mongodb.txt
+
 # IDEs
 .vscode/
 .idea/
