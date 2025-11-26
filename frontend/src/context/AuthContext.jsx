@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Cargar usuario al montar el componente si hay token
   useEffect(() => {

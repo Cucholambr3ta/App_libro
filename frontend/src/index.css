@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Colores principales - Paleta premium */
   --color-primary: hsl(260, 85%, 58%);
