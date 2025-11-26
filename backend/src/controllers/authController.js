@@ -90,9 +90,8 @@ exports.login = (req, res, next) => {
  */
 exports.googleCallback = (req, res) => {
   const token = generateToken(req.user._id);
-  // Redirigir al frontend con el token (en producción esto debería ser más seguro, ej: cookie o params)
-  // Para este MVP, redirigimos con query param
-  res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  res.redirect(`${frontendUrl}/auth/success?token=${token}`);
 };
 
 /**
@@ -102,7 +101,8 @@ exports.googleCallback = (req, res) => {
  */
 exports.facebookCallback = (req, res) => {
   const token = generateToken(req.user._id);
-  res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  res.redirect(`${frontendUrl}/auth/success?token=${token}`);
 };
 
 /**

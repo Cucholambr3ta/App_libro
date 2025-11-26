@@ -4,6 +4,8 @@ import googleIcon from '../assets/google-icon.svg';
 import facebookIcon from '../assets/facebook-icon.svg';
 import './Login.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 /**
  * Componente de Login con soporte para autenticación local y social
  */
@@ -34,7 +36,7 @@ const Login = () => {
 
   const handleSocialLogin = (provider) => {
     // Redirigir a la ruta de autenticación social del backend
-    window.location.href = `http://localhost:5000/api/auth/${provider}`;
+    window.location.href = `${API_URL}/api/auth/${provider}`;
   };
 
   return (

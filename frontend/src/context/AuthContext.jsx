@@ -5,6 +5,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
  */
 const AuthContext = createContext(null);
 
+// URL del API - usa variable de entorno o fallback a localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -24,7 +27,7 @@ export const AuthProvider = ({ children }) => {
    */
   const fetchUser = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/me', {
+      const res = await fetch(`${API_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -49,7 +52,7 @@ export const AuthProvider = ({ children }) => {
    */
   const login = async (email, password) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -77,7 +80,7 @@ export const AuthProvider = ({ children }) => {
    */
   const register = async (email, password) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
