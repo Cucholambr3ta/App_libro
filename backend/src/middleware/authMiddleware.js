@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 
 /**
  * Middleware para proteger rutas. Verifica el token JWT.
@@ -40,13 +40,53 @@ exports.admin = (req, res, next) => {
 };
 
 /**
- * Middleware para verificar licencia (Paywall).
- * Permite acceso si es admin o tiene suscripción premium.
+ * Middleware para verificar licencia Premium (Paywall).
+ * Valida TANTO status COMO fecha de expiración.
+ * Admins tienen acceso ilimitado.
  */
-exports.checkLicense = (req, res, next) => {
-  if (req.user && (req.user.role === 'admin' || req.user.subscriptionStatus === 'premium')) {
+exports.checkLicense = async (req, res, next) => {
+  try {
+    // Admin bypass
+    if (req.user && req.user.role === 'admin') {
+      return next();
+    }
+
+    // Verificar suscripción premium
+    if (!req.user || req.user.subscriptionStatus !== 'premium') {
+      return res.status(403).json({ 
+        message: 'Contenido exclusivo para usuarios Premium',
+        upgrade: true
+      });
+    }
+
+    // CRÍTICO: Verificar fecha de expiración
+    const now = new Date();
+    const expiry = req.user.subscriptionExpiry;
+
+    // Si no hay fecha de expiración, considerar como vitalicio
+    if (!expiry) {
+      console.warn(`⚠️ Usuario ${req.user.email} premium sin subscriptionExpiry`);
+      return next();
+    }
+
+    // Verificar si la suscripción está vigente
+    if (expiry < now) {
+      // Suscripción expirada - ACTUALIZAR STATUS inmediatamente
+      await User.findByIdAndUpdate(req.user.id, {
+        subscriptionStatus: 'free'
+      });
+
+      return res.status(403).json({ 
+        message: 'Su suscripción Premium ha expirado',
+        expired: true,
+        expiredOn: expiry
+      });
+    }
+
+    // Suscripción válida
     next();
-  } else {
-    res.status(403).json({ message: 'Contenido exclusivo para usuarios Premium' });
+  } catch (error) {
+    console.error('Error en checkLicense:', error);
+    res.status(500).json({ message: 'Error verificando licencia' });
   }
 };

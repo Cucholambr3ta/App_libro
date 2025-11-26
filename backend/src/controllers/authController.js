@@ -5,12 +5,19 @@ const passport = require('passport');
 /**
  * Generar Token JWT
  * @param {string} id - ID del usuario
+ * @param {string} role - Rol del usuario (opcional)
  * @returns {string} - Token JWT firmado
  */
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
-  });
+const generateToken = (id, role = 'user') => {
+  return jwt.sign(
+    { 
+      id,
+      role,
+      iat: Math.floor(Date.now() / 1000)
+    }, 
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' } // Reducido de 30d a 7d
+  );
 };
 
 /**
@@ -21,6 +28,17 @@ const generateToken = (id) => {
 exports.register = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Validación de entrada
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ message: 'Email inválido' });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ 
+        message: 'La contraseña debe tener al menos 8 caracteres' 
+      });
+    }
 
     // Verificar si el usuario ya existe
     let user = await User.findOne({ email });
@@ -36,7 +54,7 @@ exports.register = async (req, res) => {
     });
 
     // Generar token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
@@ -68,7 +86,7 @@ exports.login = (req, res, next) => {
       return res.status(401).json({ message: info.message });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.json({
       success: true,
@@ -84,25 +102,48 @@ exports.login = (req, res, next) => {
 };
 
 /**
- * @desc    Callback de Google Auth
+ * @desc    Callback de Google Auth - Platform aware
  * @route   GET /api/auth/google/callback
  * @access  Public
  */
 exports.googleCallback = (req, res) => {
-  const token = generateToken(req.user._id);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+  const token = generateToken(req.user._id, req.user.role);
+  
+  // Detectar plataforma via query param
+  const platform = req.query.platform || 'web';
+  
+  let redirectUrl;
+  if (platform === 'mobile') {
+    // Redirect para mobile (deep link)
+    redirectUrl = `recipebook://auth/success?token=${token}`;
+  } else {
+    // Redirect para web
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    redirectUrl = `${frontendUrl}/auth/success?token=${token}`;
+  }
+  
+  res.redirect(redirectUrl);
 };
 
 /**
- * @desc    Callback de Facebook Auth
+ * @desc    Callback de Facebook Auth - Platform aware
  * @route   GET /api/auth/facebook/callback
  * @access  Public
  */
 exports.facebookCallback = (req, res) => {
-  const token = generateToken(req.user._id);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+  const token = generateToken(req.user._id, req.user.role);
+  
+  const platform = req.query.platform || 'web';
+  
+  let redirectUrl;
+  if (platform === 'mobile') {
+    redirectUrl = `recipebook://auth/success?token=${token}`;
+  } else {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    redirectUrl = `${frontendUrl}/auth/success?token=${token}`;
+  }
+  
+  res.redirect(redirectUrl);
 };
 
 /**
@@ -120,6 +161,7 @@ exports.getMe = async (req, res) => {
         email: user.email,
         role: user.role,
         subscriptionStatus: user.subscriptionStatus,
+        subscriptionExpiry: user.subscriptionExpiry,
         permissions: user.permissions
       }
     });

@@ -5,10 +5,21 @@ const morgan = require('morgan');
 const connectDB = require('./config/db');
 const passport = require('./config/passport');
 
-// Conectar a la base de datos
-connectDB();
-
 const app = express();
+
+// Middleware para asegurar conexión MongoDB antes de procesar requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB(); // Conecta solo si no hay conexión activa (cached)
+    next();
+  } catch (error) {
+    console.error('DB Connection Error:', error);
+    res.status(503).json({ 
+      error: 'Database connection unavailable',
+      message: 'Por favor intente nuevamente en unos segundos'
+    });
+  }
+});
 
 // Configuración de CORS para desarrollo y producción
 const allowedOrigins = [
@@ -47,5 +58,6 @@ app.get('/', (req, res) => {
 // Rutas
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/recipes', require('./routes/recipeRoutes'));
 
 module.exports = app;

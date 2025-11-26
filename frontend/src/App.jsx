@@ -1,67 +1,71 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import { useAuth } from './context/AuthContext';
 import './App.css';
 
-/**
- * Componente de ruta de callback para autenticación social
- */
-const AuthCallback = () => {
-  const { handleSocialCallback } = useAuth();
+function App() {
+  const { user, loading, handleSocialCallback, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
 
+  // Manejar callback de autenticación social
   useEffect(() => {
-    // Extraer token de la URL
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     
     if (token) {
       handleSocialCallback(token);
-      window.location.href = '/';
+      navigate('/');
     }
-  }, [location, handleSocialCallback]);
+  }, [location, handleSocialCallback, navigate]);
 
-  return (
-    <div className="callback-loading">
-      <div className="spinner"></div>
-      <p>Autenticando...</p>
-    </div>
-  );
-};
+  // Polling para actualización post-pago
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('payment_success') === 'true') {
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        await refreshUser();
+        
+        if (user?.subscriptionStatus === 'premium' || attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          if (user?.subscriptionStatus === 'premium') {
+            alert('¡Bienvenido a Premium! Recargando contenido...');
+            window.history.replaceState({}, '', '/');
+          }
+        }
+      }, 2000);
 
-/**
- * Router principal de la aplicación
- */
-const AppRouter = () => {
-  const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
+      return () => clearInterval(pollInterval);
+    }
+  }, [location, refreshUser, user]);
 
   if (loading) {
     return (
       <div className="app-loading">
         <div className="spinner"></div>
+        <p>Cargando...</p>
       </div>
     );
   }
 
-  // Manejar ruta de callback social
-  if (location.pathname === '/auth/success') {
-    return <AuthCallback />;
-  }
-
-  return isAuthenticated ? <Dashboard /> : <Login />;
-};
-
-/**
- * Aplicación principal
- */
-function App() {
   return (
-    <AuthProvider>
-      <AppRouter />
-    </AuthProvider>
+    <Routes>
+      <Route path="/auth/success" element={
+        <div className="callback-loading">
+          <div className="spinner"></div>
+          <p>Completando autenticación...</p>
+        </div>
+      } />
+      <Route path="/" element={
+        user ? <Dashboard /> : <Login />
+      } />
+    </Routes>
   );
 }
 

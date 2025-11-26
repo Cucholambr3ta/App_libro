@@ -129,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     handleSocialCallback,
+    refreshUser: fetchUser, // Para refrescar estado post-pago
     isAuthenticated: !!user,
     isPremium: user?.subscriptionStatus === 'premium' || user?.role === 'admin'
   };

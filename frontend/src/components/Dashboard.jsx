@@ -4,50 +4,48 @@ import RecipeCard from './RecipeCard';
 import PremiumBanner from './PremiumBanner';
 import './Dashboard.css';
 
+// URL del API
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 /**
- * Dashboard principal con lista de recetas y lógica de paywall
+ * Dashboard principal con lista de recetas desde API
  */
 const Dashboard = () => {
-  const { user, logout, isPremium } = useAuth();
+  const { user, logout, isPremium, token } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simular carga de recetas (en producción esto vendría del backend)
-    setTimeout(() => {
-      setRecipes([
-        {
-          id: 1,
-          title: 'Pizza Margarita Clásica',
-          ingredients: ['Harina', 'Tomate', 'Mozzarella', 'Albahaca'],
-          isPremium: false,
-          image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400'
-        },
-        {
-          id: 2,
-          title: 'Pasta Carbonara Auténtica',
-          ingredients: ['Pasta', 'Huevos', 'Panceta', 'Pecorino'],
-          isPremium: true,
-          image: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400'
-        },
-        {
-          id: 3,
-          title: 'Sushi Rolls de Lujo',
-          ingredients: ['Arroz', 'Salmón', 'Aguacate', 'Nori'],
-          isPremium: true,
-          image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400'
-        },
-        {
-          id: 4,
-          title: 'Ensalada César Fresca',
-          ingredients: ['Lechuga', 'Pollo', 'Parmesano', 'Crutones'],
-          isPremium: false,
-          image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400'
-        }
-      ]);
-      setLoading(false);
-    }, 500);
+    fetchRecipes();
   }, []);
+
+  /**
+   * Obtener recetas del backend (ya filtradas por permisos)
+   */
+  const fetchRecipes = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/recipes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setRecipes(data.recipes);
+      } else {
+        setError('Error cargando recetas');
+        console.error('Error cargando recetas');
+      }
+    } catch (error) {
+      setError('Error de conexión');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="dashboard">
@@ -88,6 +86,13 @@ const Dashboard = () => {
         {loading ? (
           <div className="loading-container">
             <div className="spinner"></div>
+          </div>
+        ) : error ? (
+          <div className="error-container">
+            <p>{error}</p>
+            <button onClick={fetchRecipes} className="btn btn-primary">
+              Reintentar
+            </button>
           </div>
         ) : (
           <div className="recipes-grid">

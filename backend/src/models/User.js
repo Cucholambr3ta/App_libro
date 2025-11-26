@@ -83,4 +83,8 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Índices para optimizar queries de suscripción
+UserSchema.index({ subscriptionExpiry: 1, subscriptionStatus: 1 });
+UserSchema.index({ email: 1 });
+
 module.exports = mongoose.model('User', UserSchema);
